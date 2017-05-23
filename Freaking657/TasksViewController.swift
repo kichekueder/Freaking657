@@ -13,16 +13,22 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
     @IBOutlet weak var tableView: UITableView!
     
     var tasks : [Task] = []
-    var selectedIndex = 0
+    // This variable is obsolete in the core data framwwork.
+    // var selectedIndex = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        tasks = makeTasks()
-        
         tableView.dataSource = self
         tableView.delegate = self
+        
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        
+        getTasks()
+        tableView.reloadData()
         
     }
     
@@ -38,11 +44,11 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         let task = tasks[indexPath.row]
         if task.important { // not necessary to add "== true" as task.important is a boolean already.
             
-            cell.textLabel?.text = "❗️\(task.name)"
+            cell.textLabel?.text = "❗️\(task.name!)"
             
         } else {
             
-            cell.textLabel?.text = task.name
+            cell.textLabel?.text = task.name!
             
         }
         
@@ -52,27 +58,10 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        selectedIndex = indexPath.row
+        // The selectIndex variable is obsolete in the core data framework.
+        // selectedIndex = indexPath.row
         let task = tasks[indexPath.row]
         performSegue(withIdentifier: "selectTaskSegue", sender: task)
-        
-    }
-    
-    func makeTasks() -> [Task] {
-        
-        let task1 = Task()
-        task1.name = "Walk the dog"
-        task1.important = false
-        
-        let task2 = Task()
-        task2.name = "Cut the grass"
-        task2.important = false
-        
-        let task3 = Task()
-        task3.name = "Buy new Mac"
-        task3.important = true
-        
-        return [task1, task2, task3]
         
     }
     
@@ -81,24 +70,50 @@ class TasksViewController: UIViewController, UITableViewDelegate, UITableViewDat
         performSegue(withIdentifier: "addSegue", sender: nil)
         
     }
-
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    
+    func getTasks() { // This function pulls out the data from core data and will be called whenever this VC is about to display on screen.
         
-        if segue.identifier == "addSegue" {
-         
-            let nextVC = segue.destination as! CreateTaskViewController
-            nextVC.previousVC = self
+        // create link to context in core data.
+        let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+        
+        // Use the fetch function within context to collect the task table. This function "throws" and must therefore go in a do-try-catch framework.
+        
+        do {
+            
+            tasks = try context.fetch(Task.fetchRequest()) as! [Task]
+            print(tasks)
+            
+        } catch {
+            
+            print("Error collecting Tasks table.")
             
         }
+        
+    }
+    
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        
+        /* This if loop is no longer required in the core data paradigm.
+         
+         if segue.identifier == "addSegue" {
+         
+         let nextVC = segue.destination as! CreateTaskViewController
+         nextVC.previousVC = self
+         
+         }
+         
+         */
         
         if segue.identifier == "selectTaskSegue" {
             
             let nextVC = segue.destination as! CompleteTaskViewController
-            nextVC.task = sender as! Task
-            nextVC.previousVC = self
+            nextVC.task = sender as? Task // as! replaced by as?
+            // In the core data framework, it is not necessary to link between view controllers.
+            // nextVC.previousVC = self
             
         }
- 
+        
     }
     
 }
